@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:fhir-server-admin-api="http://www.mulesoft.org/schema/mule/fhir-server-admin-api"
+      xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+      xmlns:os="http://www.mulesoft.org/schema/mule/os"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:java="http://www.mulesoft.org/schema/mule/java"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:proxy="http://www.mulesoft.org/schema/mule/proxy" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+        http://www.mulesoft.org/schema/mule/proxy http://www.mulesoft.org/schema/mule/proxy/current/mule-proxy.xsd
+        http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/fhir-server-admin-api http://www.mulesoft.org/schema/mule/fhir-server-admin-api/current/mule-fhir-server-admin-api.xsd">
+
+
+	<flow name="proxy">
+        <http:listener config-ref="http-listener-config" path="/fhir/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[if (vars.proxyResponseHeaders?) vars.proxyResponseHeaders else {}]]]></http:headers>
+            </http:response>
+			<http:error-response statusCode="#[vars.httpStatus]" >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+			</http:error-response>
+        
+</http:listener>
+		<proxy:request-headers doc:name="Request headers" doc:id="2da2862d-1c65-49b6-8098-29a145a22a2c" config-ref="Proxy_Config" target="proxyRequestHeaders"/>
+		<set-variable value="#[%dw 2.0
+import * from dw::core::Strings
+output text/plain
+---
+(attributes.relativePath splitBy '/') [2]]" doc:name="retrieve resource type from path" doc:id="7b1b1c14-a7f0-4ba4-8342-477024a902cc" variableName="resourceName" />
+		<flow-ref doc:name="retrieve-route" doc:id="72d6b18b-3d06-4e24-a552-ed2e4ea779fc" name="retrieve-route" target="resourceRoute" />
+		<try doc:name="Try" doc:id="2a130d60-c516-4ca8-80ac-e28a6ce45cd1">
+			<validation:is-not-blank-string doc:name="Is not blank string" doc:id="da75f0a1-0baf-40af-951a-c5513934840e" value="#[vars.resourceRoute]" />
+			<error-handler>
+				<on-error-propagate enableNotifications="false" logException="false" doc:name="On Error Propagate" doc:id="860b921c-cd4a-48a3-bfe0-4688cabed475" type="VALIDATION:BLANK_STRING">
+					<ee:transform doc:name="Transform Message" doc:id="da250a34-966e-41bb-8d81-8ae83dbedc53">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errorMessage: "Resource not published",
+	errorStatus: "404"
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<set-variable value="404" doc:name="Set Variable" doc:id="b1f1a524-e808-4487-98f4-df9f546b7463" variableName="httpStatus" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<http:request method="#[attributes.method]" doc:name="route request" url='#["$(vars.resourceRoute)/$(vars.resourceName)"]'>
+            <http:headers><![CDATA[#[vars.proxyRequestHeaders]]]></http:headers>
+            <http:uri-params><![CDATA[#[attributes.uriParams]]]></http:uri-params>
+            <http:query-params><![CDATA[#[attributes.queryParams]]]></http:query-params>
+            <http:response-validator>
+                <http:success-status-code-validator values="0..599" />
+            </http:response-validator>
+        </http:request>
+
+        <choice doc:name="Choice" doc:id="a25923b7-108b-4dae-a66f-e5a837252ca1" >
+			<when expression="#[import startsWith from dw::core::Strings
+---
+(attributes.headers['Content-Type'] default &quot;&quot;) startsWith 'application/fhir+json']">
+				<ee:transform doc:name="Transform Message" doc:id="4ce679bc-54eb-4e8a-a311-e0fbc8e0ec73">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+var replaceEverywhere = (payload, replaceWhat, replaceWith) ->
+	payload match {
+		case is Array -> payload map replaceEverywhere($, replaceWhat, replaceWith)
+		case is Object -> payload mapObject ($$): replaceEverywhere($, replaceWhat, replaceWith)
+		case is String ->  
+			if (payload == null) null
+			else payload replace replaceWhat with replaceWith
+		else -> payload
+	}
+
+---
+replaceEverywhere(payload, vars.resourceRoute, p('baseUrl'))]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<when expression="#[import startsWith from dw::core::Strings
+---
+(attributes.headers['Content-Type'] default &quot;&quot;) startsWith 'application/fhir+xml']">
+				<ee:transform doc:name="Transform Message" doc:id="588d7021-e845-4c87-aaca-9f83d8799f42" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+
+var replaceEverywhere = (payload, replaceWhat, replaceWith) ->
+    payload match {
+        case is Array -> payload map replaceEverywhere($, replaceWhat, replaceWith)
+        case is Object -> payload mapObject (value, key) -> {
+            (key) @(
+                (
+                    if (key.@value?) (key.@ - "value") ++ { value: key.@value replace replaceWhat with replaceWith}
+                    else {}
+                )
+            ): replaceEverywhere(value, replaceWhat, replaceWith)
+        }
+        else -> payload
+    }
+
+---
+replaceEverywhere(payload, vars.resourceRoute, p('baseUrl'))]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+		</choice>
+		<set-variable value="#[attributes.statusCode as String]" doc:name="Set Variable" doc:id="d5f019f4-bbc7-4c21-a13f-3513fc8adc46" variableName="httpStatus"/>
+		<proxy:response-headers target="proxyResponseHeaders" doc:name="set response headers" config-ref="Proxy_Config"/>
+		<error-handler>
+            <on-error-continue type="HTTP:TIMEOUT" logException="false">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-attributes>
+                            {
+                                statusCode: 504
+                            }
+                        </ee:set-attributes>
+                    </ee:message>
+                </ee:transform>
+            </on-error-continue>
+        </error-handler>
+    </flow>
+	<flow name="retrieve-route" doc:id="0880e4bc-f1bb-435b-8dba-dc1087abc3f6" >
+		<try doc:name="Try" doc:id="5c43cce5-ceae-4efd-b03c-13ff5ed0f800" >
+			<os:retrieve doc:name="get map from ostore" doc:id="09552ad9-20c3-4f2e-af15-90011448fd1d" key="resourceRoutes" objectStore="Object_store1">
+		</os:retrieve>
+			<error-handler >
+				<on-error-continue enableNotifications="false" logException="false" doc:name="On Error Continue" doc:id="02cb1d40-97af-4f0f-b232-391484d9803b" type="OS:INVALID_KEY, OS:KEY_NOT_FOUND, OS:STORE_NOT_AVAILABLE">
+					<flow-ref doc:name="refresh mappings from admin server config" doc:id="292162eb-dfb7-41c4-b499-48bd3e4a2ac5" name="refresh-object-store-mappings"/>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="return url route to resource" doc:id="22018418-1400-417c-abc6-71c46a3527ec" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output text/plain
+---
+payload[vars.resourceName]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="update-routes" doc:id="f11b4046-6e50-42c0-aa48-7a0a8310d2d5">
+		<http:listener doc:name="Listener" doc:id="f6fec100-07cb-476a-b2d2-97c993ba1ddc" config-ref="http-listener-config" path="/updatemap" />
+		<flow-ref doc:name="refresh mappings from admin server config" doc:id="d53e5f79-afe3-4ecf-8110-dd45b1be7376" name="refresh-object-store-mappings" />
+	</flow>
+	<flow name="refresh-object-store-mappings" doc:id="af9f99b5-4a82-4a0a-a21a-926fc594a019" >
+		<fhir-server-admin-api:get-fhir-resources doc:name="Get fhir resources" doc:id="32fa0abc-b30e-4689-b7f3-af28e0ecc267" config-ref="FHIR_Server_Admin_API_Config"/>
+		<ee:transform doc:name="convert to map" doc:id="0df2299d-817d-47d9-9d27-f5c2bf09b1e3">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{(payload map ($.resourceName): $.resourceURL)}     ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<os:store doc:name="save in object store" doc:id="c428da80-0e55-49c6-96d2-29a67b2c9acf" key="resourceRoutes" objectStore="Object_store1" />
+	</flow>
+
+</mule>

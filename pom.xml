@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.mulesoft-fhir</groupId>
+  <artifactId>fhir-r4-eapi</artifactId>
+  <version>1.0.0</version>
+  <packaging>mule-application</packaging>
+  <name>fhir-r4-eapi</name>
+
+  <parent>
+    <groupId>com.mulesoft-fhir</groupId>
+    <artifactId>fhir-bom</artifactId>
+    <version>1.0.1-SNAPSHOT</version>
+  </parent>
+
+
+  <description />
+  <properties>
+    <attachMuleSources>true</attachMuleSources>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.mulesoft.anypoint</groupId>
+      <artifactId>mule-http-proxy-extension</artifactId>
+      <version>1.1.3</version>
+      <classifier>mule-plugin</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.mule.module</groupId>
+      <artifactId>mule-java-module</artifactId>
+      <version>1.2.6</version>
+      <classifier>mule-plugin</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.mule.modules</groupId>
+      <artifactId>mule-validation-module</artifactId>
+      <version>1.4.0</version>
+      <classifier>mule-plugin</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.mule.connectors</groupId>
+      <artifactId>mule-objectstore-connector</artifactId>
+      <version>1.1.5</version>
+      <classifier>mule-plugin</classifier>
+    </dependency>
+    <dependency>
+      <groupId>17473fef-b0b5-40f2-b1a0-72bee4bed13c</groupId>
+      <artifactId>mule-plugin-fhir-server-admin</artifactId>
+      <version>1.0.4</version>
+      <classifier>mule-plugin</classifier>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.mule.connectors</groupId>
+      <artifactId>mule-http-connector</artifactId>
+      <classifier>mule-plugin</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.mule.connectors</groupId>
+      <artifactId>mule-sockets-connector</artifactId>
+      <classifier>mule-plugin</classifier>
+    </dependency>
+  </dependencies>
+</project>

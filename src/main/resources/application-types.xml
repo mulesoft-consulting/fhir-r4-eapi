@@ -1,0 +1,96 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="routeList" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: object
+properties:
+    path:
+        type: string
+    url:
+        type: string
+]]></types:shape>
+    </types:type>
+    <types:type name="object" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: string]]></types:shape>
+    </types:type>
+    <types:type name="simpleString" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: string]]></types:shape>
+    </types:type>
+    <types:type name="resourceList" format="json">
+      <types:shape format="weave" example="examples/resourceList.json"><![CDATA[%dw 2.0
+
+type resourceList = {|
+  resourceName: String, 
+  resourceURL: String
+|} {"example": "{\\\"resourceName\\\":\\\"AllergyIntolerance\\\",\\\"resourceURL\\\":\\\"http:\\/\\/www.example.com\\\"}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#5a7e9e2e-51f5-4554-babe-508c7b01da0f">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:variables>
+          <types:variable name="routes" type="routeList[]"/>
+        </types:variables>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#f11b4046-6e50-42c0-aa48-7a0a8310d2d5">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="simpleString"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#0880e4bc-f1bb-435b-8dba-dc1087abc3f6">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:variables>
+          <types:variable name="resourceName" type="simpleString"/>
+        </types:variables>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#5c43cce5-ceae-4efd-b03c-13ff5ed0f800">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="resourceList[]"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#72d6b18b-3d06-4e24-a552-ed2e4ea779fc">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="resourceRoute" type="simpleString"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#0df2299d-817d-47d9-9d27-f5c2bf09b1e3">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="resourceList[]"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#32fa0abc-b30e-4689-b7f3-af28e0ecc267">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="resourceList[]"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
