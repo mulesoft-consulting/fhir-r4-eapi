@@ -15,7 +15,7 @@ http://www.mulesoft.org/schema/mule/proxy http://www.mulesoft.org/schema/mule/pr
 http://www.mulesoft.org/schema/mule/fhir-server-admin-api http://www.mulesoft.org/schema/mule/fhir-server-admin-api/current/mule-fhir-server-admin-api.xsd">
 	<global-property doc:name="Global Property"
 		doc:id="004ca0ea-7e38-4516-97df-9e22347a8ca0" name="baseUrl"
-		value="http://localhost:8081/fhir" />
+		value="http://localhost:8081" />
 	<global-property doc:name="Global Property"
 		doc:id="30384f03-5f44-433c-ac67-2593a14c929f" name="env"
 		value="dev" />
