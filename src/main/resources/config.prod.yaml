@@ -1,5 +1,5 @@
 anypoint:
-  autodiscovery: "16411001"
+  autodiscovery: "16457416"
 fhir:
   admin:
     host: "fhir-server-admin-api.us-e2.cloudhub.io"
