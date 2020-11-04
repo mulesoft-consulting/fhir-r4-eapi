@@ -17,7 +17,7 @@ http://www.mulesoft.org/schema/mule/fhir-server-admin-api http://www.mulesoft.or
 
 
 	<flow name="proxy">
-        <http:listener config-ref="http-listener-config" path="/fhir/*">
+        <http:listener config-ref="http-listener-config" path="/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
                 <http:headers><![CDATA[#[if (vars.proxyResponseHeaders?) vars.proxyResponseHeaders else {}]]]></http:headers>
             </http:response>
@@ -27,11 +27,23 @@ http://www.mulesoft.org/schema/mule/fhir-server-admin-api http://www.mulesoft.or
         
 </http:listener>
 		<proxy:request-headers doc:name="Request headers" doc:id="2da2862d-1c65-49b6-8098-29a145a22a2c" config-ref="Proxy_Config" target="proxyRequestHeaders"/>
-		<set-variable value="#[%dw 2.0
+		<ee:transform doc:name="set variables" doc:id="f0f51db7-328c-4f46-936c-4bd4707ff6b1" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="resourceName" ><![CDATA[%dw 2.0
 import * from dw::core::Strings
 output text/plain
 ---
-(attributes.relativePath splitBy '/') [2]]" doc:name="retrieve resource type from path" doc:id="7b1b1c14-a7f0-4ba4-8342-477024a902cc" variableName="resourceName" />
+(attributes.relativePath splitBy '/') [1]]]></ee:set-variable>
+				<ee:set-variable variableName="uriParams" ><![CDATA[%dw 2.0
+import * from dw::core::Strings
+output text/plain
+var uriString = ((attributes.relativePath splitBy '/') [2 to -1] default []) joinBy '/'
+---
+if (isEmpty(uriString)) "" else "/$(uriString)"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
 		<flow-ref doc:name="retrieve-route" doc:id="72d6b18b-3d06-4e24-a552-ed2e4ea779fc" name="retrieve-route" target="resourceRoute" />
 		<try doc:name="Try" doc:id="2a130d60-c516-4ca8-80ac-e28a6ce45cd1">
 			<validation:is-not-blank-string doc:name="Is not blank string" doc:id="da75f0a1-0baf-40af-951a-c5513934840e" value="#[vars.resourceRoute]" />
@@ -52,9 +64,8 @@ output application/json
 				</on-error-propagate>
 			</error-handler>
 		</try>
-		<http:request method="#[attributes.method]" doc:name="route request" url='#["$(vars.resourceRoute)/$(vars.resourceName)"]'>
+		<http:request method="#[attributes.method]" doc:name="route request" url='#["$(vars.resourceRoute)/$(vars.resourceName)$(vars.uriParams)"]'>
             <http:headers><![CDATA[#[vars.proxyRequestHeaders]]]></http:headers>
-            <http:uri-params><![CDATA[#[attributes.uriParams]]]></http:uri-params>
             <http:query-params><![CDATA[#[attributes.queryParams]]]></http:query-params>
             <http:response-validator>
                 <http:success-status-code-validator values="0..599" />
