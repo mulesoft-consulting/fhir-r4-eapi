@@ -1,7 +1,8 @@
 {
   "secureProperties": [
     "anypoint.platform.client_id",
-    "anypoint.platform.client_secret"
+    "anypoint.platform.client_secret",
+    "securePropertiesKey"
   ],
   "redeploymentEnabled": true,
   "name": "org.mule.examples:api-gateway-sample-http-proxy:2.0.0",
