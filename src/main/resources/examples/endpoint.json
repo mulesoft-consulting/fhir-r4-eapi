@@ -1,0 +1,8 @@
+{
+  "hostname": "dev-1hls-fhir-r4-practitionerrole-api-v1.us-e2.cloudhub.io",
+  "protocol": "HTTP",
+  "resource": "PractitionerRole",
+  "port": 80,
+  "basepath": "/",
+  "id": "5fc903efd944f70badf746d3"
+}

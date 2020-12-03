@@ -46,7 +46,7 @@ if (isEmpty(uriString)) "" else "/$(uriString)"]]></ee:set-variable>
 		</ee:transform>
 		<flow-ref doc:name="retrieve-route" doc:id="72d6b18b-3d06-4e24-a552-ed2e4ea779fc" name="retrieve-route" target="resourceRoute" />
 		<try doc:name="Try" doc:id="2a130d60-c516-4ca8-80ac-e28a6ce45cd1">
-			<validation:is-not-blank-string doc:name="Is not blank string" doc:id="da75f0a1-0baf-40af-951a-c5513934840e" value="#[vars.resourceRoute]" />
+			<validation:is-not-null doc:name="Is not null" doc:id="0083c9c6-c4ff-4336-84fc-e3120cda339f" value="#[vars.resourceRoute]"/>
 			<error-handler>
 				<on-error-propagate enableNotifications="false" logException="false" doc:name="On Error Propagate" doc:id="860b921c-cd4a-48a3-bfe0-4688cabed475" type="VALIDATION:BLANK_STRING">
 					<ee:transform doc:name="Transform Message" doc:id="da250a34-966e-41bb-8d81-8ae83dbedc53">
@@ -64,7 +64,7 @@ output application/json
 				</on-error-propagate>
 			</error-handler>
 		</try>
-		<http:request method="#[attributes.method]" doc:name="route request" url='#["$(vars.resourceRoute)/$(vars.resourceName)$(vars.uriParams)"]'>
+		<http:request method="#[attributes.method]" doc:name="route request" url='#["$(vars.resourceRoute.protocol)://$(vars.resourceRoute.hostname):$(vars.resourceRoute.port)$(vars.resourceRoute.basepath)$(vars.resourceName)$(vars.uriParams)"]'>
             <http:headers><![CDATA[#[vars.proxyRequestHeaders]]]></http:headers>
             <http:query-params><![CDATA[#[attributes.queryParams]]]></http:query-params>
             <http:response-validator>
@@ -92,7 +92,7 @@ var replaceEverywhere = (payload, replaceWhat, replaceWith) ->
 	}
 
 ---
-replaceEverywhere(payload, vars.resourceRoute, p('baseUrl'))]]></ee:set-payload>
+replaceEverywhere(payload, lower(vars.resourceRoute.protocol) ++ "://" ++ vars.resourceRoute.hostname, p('baseUrl'))]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 			</when>
@@ -119,7 +119,7 @@ var replaceEverywhere = (payload, replaceWhat, replaceWith) ->
     }
 
 ---
-replaceEverywhere(payload, vars.resourceRoute, p('baseUrl'))]]></ee:set-payload>
+replaceEverywhere(payload, lower(vars.resourceRoute.protocol) ++ "://" ++ vars.resourceRoute.hostname, p('baseUrl'))]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
 			</when>
@@ -153,7 +153,7 @@ replaceEverywhere(payload, vars.resourceRoute, p('baseUrl'))]]></ee:set-payload>
 		<ee:transform doc:name="return url route to resource" doc:id="22018418-1400-417c-abc6-71c46a3527ec" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
-output text/plain
+output application/json
 ---
 payload[vars.resourceName]]]></ee:set-payload>
 			</ee:message>
@@ -164,13 +164,13 @@ payload[vars.resourceName]]]></ee:set-payload>
 		<flow-ref doc:name="refresh mappings from admin server config" doc:id="d53e5f79-afe3-4ecf-8110-dd45b1be7376" name="refresh-object-store-mappings" />
 	</flow>
 	<flow name="refresh-object-store-mappings" doc:id="af9f99b5-4a82-4a0a-a21a-926fc594a019" >
-		<fhir-server-admin-api:get-fhir-resources doc:name="Get fhir resources" doc:id="32fa0abc-b30e-4689-b7f3-af28e0ecc267" config-ref="FHIR_Server_Admin_API_Config"/>
+		<fhir-server-admin-api:get-resources doc:name="Get resources" doc:id="5d91bd27-af2b-4937-acdd-6ad5aadc6d6d" config-ref="FHIR_Server_Admin_API_Config"/>
 		<ee:transform doc:name="convert to map" doc:id="0df2299d-817d-47d9-9d27-f5c2bf09b1e3">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
-output application/java
+output application/json
 ---
-{(payload map ($.resourceName): $.resourceURL)}     ]]></ee:set-payload>
+{(payload map {($.resource): $})}]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 		<os:store doc:name="save in object store" doc:id="c428da80-0e55-49c6-96d2-29a67b2c9acf" key="resourceRoutes" objectStore="Object_store1" />
