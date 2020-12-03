@@ -29,6 +29,20 @@ type resourceList = {|
 
 ]]></types:shape>
     </types:type>
+    <types:type name="resourceEndpoint" format="json">
+      <types:shape format="weave" example="examples/endpoint.json"><![CDATA[%dw 2.0
+
+type resourceEndpoint = {|
+  hostname: String, 
+  protocol: String, 
+  resource: String, 
+  port: Number {"typeId": "int"}, 
+  basepath: String, 
+  id: String
+|} {"example": "{\\\"hostname\\\":\\\"dev-1hls-fhir-r4-practitionerrole-api-v1.us-e2.cloudhub.io\\\",\\\"protocol\\\":\\\"HTTP\\\",\\\"resource\\\":\\\"PractitionerRole\\\",\\\"port\\\":80,\\\"basepath\\\":\\\"\\/\\\",\\\"id\\\":\\\"5fc903efd944f70badf746d3\\\"}"}
+
+]]></types:shape>
+    </types:type>
   </types:catalog>
   <types:enrichment select="#5a7e9e2e-51f5-4554-babe-508c7b01da0f">
     <types:processor-declaration>
@@ -57,33 +71,16 @@ type resourceList = {|
       </types:input-event>
     </types:processor-declaration>
   </types:enrichment>
-  <types:enrichment select="#5c43cce5-ceae-4efd-b03c-13ff5ed0f800">
-    <types:processor-declaration>
-      <types:output-event>
-        <types:message>
-          <types:payload type="resourceList[]"/>
-        </types:message>
-      </types:output-event>
-    </types:processor-declaration>
-  </types:enrichment>
   <types:enrichment select="#72d6b18b-3d06-4e24-a552-ed2e4ea779fc">
     <types:processor-declaration>
       <types:output-event>
         <types:variables>
-          <types:variable name="resourceRoute" type="simpleString"/>
+          <types:variable name="resourceRoute" type="resourceEndpoint"/>
         </types:variables>
       </types:output-event>
     </types:processor-declaration>
   </types:enrichment>
-  <types:enrichment select="#0df2299d-817d-47d9-9d27-f5c2bf09b1e3">
-    <types:processor-declaration>
-      <types:input-event>
-        <types:message>
-          <types:payload type="resourceList[]"/>
-        </types:message>
-      </types:input-event>
-    </types:processor-declaration>
-  </types:enrichment>
+  <types:enrichment select="#0df2299d-817d-47d9-9d27-f5c2bf09b1e3"/>
   <types:enrichment select="#32fa0abc-b30e-4689-b7f3-af28e0ecc267">
     <types:processor-declaration>
       <types:output-event>
